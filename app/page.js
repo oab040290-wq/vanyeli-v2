@@ -29,7 +29,16 @@ export default function Tienda() {
           </div>
         ))}
       </div>
-      {cart.length>0 && (<div style={{position:'fixed', bottom:'10px', left:'10px', right:'10px', background:'black', color:'white', borderRadius:'20px', padding:'15px', maxWidth:'450px', margin:'0 auto', zIndex:999}}><div style={{display:'flex', justifyContent:'space-between', fontWeight:'bold'}}><span>{cart.length} productos</span><span>${total} MXN</span></div><button onClick={checkout} style={{width:'100%', background:'#db2777', color:'white', padding:'14px', borderRadius:'15px', border:'none', fontWeight:'900', marginTop:'10px'}}>PEDIR POR WHATSAPP 56 5778 5920</button></div>)}
+      {cart.length>0 && (<div style={{position:'fixed', bottom:'10px', left:'10px', right:'10px', background:'black', color:'white', borderRadius:'20px', padding:'15px', maxWidth:'450px', margin:'0 auto', zIndex:999}}><div style={{display:'flex', justifyContent:'space-between', fontWeight:'bold'}}><span>{cart.length} productos</span><span>${total} MXN</span></div><button onClick={checkout} style={{width:'100%', background:'#db2777', color:'white', padding:'14px', borderRadius:'15px', border:'none', fontWeight:'900', marginTop:'10px'}}>const pagarMercadoPago = async () => {
+  const res = await fetch("/api/checkout", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ items: carrito }),
+  });
+  const data = await res.json();
+  if (data.url) window.location.href = data.url;
+  else alert("Error: " + JSON.stringify(data));
+};PEDIR POR WHATSAPP 56 5778 5920</button></div>)}
     </div>
   );
 }
