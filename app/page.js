@@ -1,44 +1,130 @@
-"use client"
-import { useState, useEffect } from "react";
+"use client";
+import { useState } from "react";
+
 const productos = [
-  {id:1, nombre:"Suero KORMESIC Aclarante Coreano", precio:349, antes:599, ganancia:284, viral:89, emoji:"✨", desc:"Coreano original - Quita manchas en 7 días"},
-  {id:2, nombre:"Kit Viral Vanyeli (5 piezas)", precio:299, antes:450, ganancia:210, viral:95, emoji:"🔥", desc:"El más pedido en TikTok MX"},
-  {id:3, nombre:"Parches Acné Coreanos", precio:199, antes:299, ganancia:140, viral:82, emoji:"💖", desc:"Invisible - Resultados en 6hrs"},
+  {
+    id: 1,
+    nombre: "Suero KORMESIC Aclarante Coreano",
+    descripcion: "Coreano original - Quita manchas en 7 días",
+    precio: 349,
+    precioAnterior: 599,
+    ganancia: 284,
+    viral: 89,
+    emoji: "✨",
+    color: "bg-green-500"
+  },
+  {
+    id: 2,
+    nombre: "Kit Viral Vanyeli (5 piezas)",
+    descripcion: "El más pedido en TikTok MX",
+    precio: 299,
+    precioAnterior: 450,
+    ganancia: 210,
+    viral: 95,
+    emoji: "🔥",
+    color: "bg-green-500"
+  },
+  {
+    id: 3,
+    nombre: "Parches Acné Coreanos (24 pzs)",
+    descripcion: "Invisible - Seca granos en 1 noche",
+    precio: 199,
+    precioAnterior: 299,
+    ganancia: 120,
+    viral: 82,
+    emoji: "💖",
+    color: "bg-orange-400"
+  },
 ];
-export default function Tienda() {
-  const [cart, setCart] = useState([]);
-  const [total, setTotal] = useState(0);
-  useEffect(()=>{setTotal(cart.reduce((s,p)=>s+p.precio*p.qty,0))},[cart]);
-  const add = (p) => { setCart(prev=>{ const e = prev.find(x=>x.id===p.id); return e? prev.map(x=>x.id===p.id?{...x, qty:x.qty+1}:x) : [...prev, {...p, qty:1}]; }); };
-  const checkout = () => { const det = cart.map(p=>`• ${p.nombre} x${p.qty} = $${p.precio*p.qty}`).join('%0A'); const msg = `Hola Vanyeli! 💖 Quiero:%0A%0A${det}%0A%0ATotal: $${total} MXN%0A%0ANombre:%0ADireccion Tecamac:%0A`; window.open(`https://wa.me/525657785920?text=${msg}`, '_blank'); };
+
+export default function Home() {
+  const [carrito, setCarrito] = useState([]);
+  const [cargando, setCargando] = useState(false);
+
+  const agregarAlCarrito = (prod) => {
+    const existe = carrito.find(p => p.id === prod.id);
+    if (existe) {
+      setCarrito(carrito.map(p => p.id === prod.id? {...p, cantidad: p.cantidad + 1} : p));
+    } else {
+      setCarrito([...carrito, {...prod, cantidad: 1}]);
+    }
+  };
+
+  const total = carrito.reduce((acc, p) => acc + (p.precio * p.cantidad), 0);
+  const cantidadTotal = carrito.reduce((acc, p) => acc + p.cantidad, 0);
+
+  const pagarMercadoPago = async () => {
+    setCargando(true);
+    try {
+      const items = carrito.map(p => ({
+        nombre: p.nombre,
+        precio: p.precio,
+        cantidad: p.cantidad
+      }));
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert("Error MP: " + JSON.stringify(data));
+        setCargando(false);
+      }
+    } catch (e) {
+      alert("Error: " + e.message);
+      setCargando(false);
+    }
+  };
+
+  const pedirWhatsApp = () => {
+    const mensaje = `Hola Vanyeli! Quiero pedir: ${carrito.map(p => `${p.nombre} x${p.cantidad}`).join(", ")} - Total: $${total} MXN`;
+    window.open(`https://wa.me/525657785920?text=${encodeURIComponent(mensaje)}`, "_blank");
+  };
+
   return (
-    <div style={{minHeight:'100vh', background:'#fff0f6', paddingBottom:'100px', fontFamily:'sans-serif'}}>
-      <div style={{background:'black', color:'white', padding:'15px', textAlign:'center'}}>
-        <h1 style={{margin:0, color:'#ff69b4', fontWeight:'900', fontSize:'24px'}}>VANYELI.COM.MX</h1>
-        <p style={{margin:0, fontSize:'11px'}}>Envío 24hrs desde Tecámac • Pago Mercado Pago</p>
-      </div>
-      <div style={{padding:'15px', maxWidth:'450px', margin:'0 auto'}}>
-        <h2 style={{fontWeight:'900'}}>Productos Virales 🔥</h2>
-        {productos.map(p=>(
-          <div key={p.id} style={{background:'white', borderRadius:'20px', padding:'15px', marginTop:'15px', boxShadow:'0 4px 20px rgba(0,0,0,0.1)'}}>
-            <div style={{display:'flex', justifyContent:'space-between'}}><span style={{fontSize:'30px'}}>{p.emoji}</span><span style={{background:p.viral>85?'#22c55e':'#f59e0b', color:'white', padding:'5px 10px', borderRadius:'20px', fontSize:'12px', fontWeight:'bold'}}>{p.viral}/100 VIRAL</span></div>
-            <h3 style={{margin:'10px 0 5px 0', fontWeight:'bold'}}>{p.nombre}</h3>
-            <p style={{fontSize:'12px', color:'gray', margin:0}}>{p.desc} • Ganancia: ${p.ganancia} MXN</p>
-            <div style={{display:'flex', gap:'10px', alignItems:'center', marginTop:'10px'}}><span style={{textDecoration:'line-through', color:'gray'}}>${p.antes}</span><span style={{fontSize:'22px', fontWeight:'900', color:'#db2777'}}>${p.precio}</span></div>
-            <button onClick={()=>add(p)} style={{width:'100%', background:'black', color:'white', padding:'14px', borderRadius:'30px', border:'none', fontWeight:'bold', marginTop:'12px'}}>AGREGAR AL CARRITO</button>
+    <div className="min-h-screen bg-pink-100 p-4 pb-40">
+      <h1 className="text-3xl font-black text-center mt-6 mb-2">Productos Virales 🔥</h1>
+      <p className="text-center text-gray-500 mb-6">Los más vendidos de TikTok</p>
+
+      <div className="max-w-md mx-auto space-y-5">
+        {productos.map((prod) => (
+          <div key={prod.id} className="bg-white rounded-[28px] p-5 shadow-sm">
+            <div className="flex justify-between items-start mb-2">
+              <span className="text-4xl">{prod.emoji}</span>
+              <span className={`text-white text-sm font-bold px-4 py-1.5 rounded-full ${prod.color}`}>
+                {prod.viral}/100 VIRAL
+              </span>
+            </div>
+            <h2 className="font-black text-xl leading-tight">{prod.nombre}</h2>
+            <p className="text-gray-500 text-sm mt-1">{prod.descripcion} • Ganancia: ${prod.ganancia} MXN</p>
+            <div className="flex items-center gap-2 mt-2">
+              <span className="line-through text-gray-400 text-lg">${prod.precioAnterior}</span>
+              <span className="text-pink-600 font-black text-3xl">${prod.precio}</span>
+            </div>
+            <button onClick={() => agregarAlCarrito(prod)} className="w-full bg-black text-white py-4 rounded-full font-black mt-4">
+              AGREGAR AL CARRITO
+            </button>
           </div>
         ))}
       </div>
-      {cart.length>0 && (<div style={{position:'fixed', bottom:'10px', left:'10px', right:'10px', background:'black', color:'white', borderRadius:'20px', padding:'15px', maxWidth:'450px', margin:'0 auto', zIndex:999}}><div style={{display:'flex', justifyContent:'space-between', fontWeight:'bold'}}><span>{cart.length} productos</span><span>${total} MXN</span></div><button onClick={checkout} style={{width:'100%', background:'#db2777', color:'white', padding:'14px', borderRadius:'15px', border:'none', fontWeight:'900', marginTop:'10px'}}>const pagarMercadoPago = async () => {
-  const res = await fetch("/api/checkout", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ items: carrito }),
-  });
-  const data = await res.json();
-  if (data.url) window.location.href = data.url;
-  else alert("Error: " + JSON.stringify(data));
-};PEDIR POR WHATSAPP 56 5778 5920</button></div>)}
+
+      {carrito.length > 0 && (
+        <div className="fixed bottom-4 left-4 right-4 max-w-md mx-auto bg-black text-white rounded-[24px] p-4 shadow-2xl">
+          <div className="flex justify-between mb-3 font-bold">
+            <span>{cantidadTotal} productos</span>
+            <span>${total} MXN</span>
+          </div>
+          <button onClick={pagarMercadoPago} disabled={cargando} className="w-full bg-blue-600 text-white py-3.5 rounded-full font-black mb-2">
+            {cargando? "CARGANDO..." : `PAGAR CON TARJETA 💳`}
+          </button>
+          <button onClick={pedirWhatsApp} className="w-full bg-pink-600 text-white py-3.5 rounded-full font-black">
+            PEDIR POR WHATSAPP 56 5778 5920
+          </button>
+        </div>
+      )}
     </div>
   );
 }
